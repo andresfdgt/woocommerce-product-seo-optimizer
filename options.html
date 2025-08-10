@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de WooSEO</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Configuración de WooSEO</h1>
+        <p>Introduce tu API Key de Gemini y personaliza el prompt base.</p>
+
+        <form id="optionsForm">
+            <div class="form-group">
+                <label for="apiKey">API Key de Gemini:</label>
+                <input type="text" id="apiKey" placeholder="Copia y pega tu API Key aquí">
+            </div>
+
+            <div class="form-group">
+                <label for="promptBase">Prompt base para Gemini:</label>
+                <textarea id="promptBase" rows="10" placeholder="Escribe aquí las instrucciones para la IA..."></textarea>
+                <small>Usa `{title}`, `{description}`, `{ingredients}`, `{size}` y `{imageUrl}` como placeholders.</small>
+            </div>
+            
+            <button type="submit" class="primary-button">Guardar Configuración</button>
+        </form>
+
+        <div id="status" class="status-message"></div>
+    </div>
+    <script src="options.js"></script>
+</body>
+</html>
