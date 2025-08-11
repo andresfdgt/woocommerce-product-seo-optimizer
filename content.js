@@ -359,37 +359,72 @@ function applyHtmlDescription(htmlContent) {
 function applyFocusKeyword(keyword) {
     console.log('[WooSEO] Intentando aplicar focus keyword:', keyword);
     
-    // Estrategia 1: Tagify input (Rank Math nuevo)
+    // Estrategia 1: Acceso directo a la instancia Tagify
     try {
+        const tagifyContainer = document.querySelector('.tagify');
         const tagifyInput = document.querySelector('.tagify__input');
-        if (tagifyInput) {
-            // Limpiar contenido actual
+        
+        if (tagifyContainer && tagifyInput) {
+            console.log('[WooSEO] Encontrado contenedor Tagify');
+            
+            // Intentar acceder a la instancia Tagify directamente
+            if (tagifyContainer.tagify) {
+                console.log('[WooSEO] Usando instancia Tagify directa');
+                tagifyContainer.tagify.removeAllTags();
+                tagifyContainer.tagify.addTags([keyword]);
+                console.log('[WooSEO] ✅ Focus keyword aplicado via instancia Tagify');
+                return true;
+            }
+            
+            // Método alternativo: simular escritura completa
+            console.log('[WooSEO] Simulando escritura en Tagify input');
+            
+            // Limpiar contenido existente
             tagifyInput.textContent = '';
             tagifyInput.innerHTML = '';
             
-            // Insertar el nuevo keyword
-            tagifyInput.textContent = keyword;
-            tagifyInput.innerHTML = keyword;
-            
-            // Simular eventos de teclado para activar Tagify
+            // Enfocar el input
             tagifyInput.focus();
             
-            // Simular typing
-            const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-            tagifyInput.dispatchEvent(inputEvent);
+            // Simular escritura caracter por caracter
+            for (let i = 0; i < keyword.length; i++) {
+                const char = keyword[i];
+                tagifyInput.textContent += char;
+                
+                // Disparar evento de input por cada caracter
+                const inputEvent = new Event('input', { 
+                    bubbles: true, 
+                    cancelable: true,
+                    data: char
+                });
+                tagifyInput.dispatchEvent(inputEvent);
+            }
             
-            // Simular Enter para confirmar el tag
-            const keydownEvent = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true,
-                cancelable: true
-            });
-            tagifyInput.dispatchEvent(keydownEvent);
+            // Esperar un poco antes de simular Enter
+            setTimeout(() => {
+                // Simular presionar Enter
+                const keydownEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true,
+                    cancelable: true
+                });
+                tagifyInput.dispatchEvent(keydownEvent);
+                
+                const keyupEvent = new KeyboardEvent('keyup', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true,
+                    cancelable: true
+                });
+                tagifyInput.dispatchEvent(keyupEvent);
+            }, 100);
             
-            console.log('[WooSEO] ✅ Focus keyword aplicado via Tagify');
+            console.log('[WooSEO] ✅ Focus keyword aplicado via simulación Tagify');
             return true;
         }
     } catch (error) {
@@ -409,7 +444,34 @@ function applyFocusKeyword(keyword) {
         console.warn('[WooSEO] Error con input hidden:', error);
     }
     
-    // Estrategia 3: Otros selectores alternativos
+    // Estrategia 3: Buscar el input oculto asociado a Tagify
+    try {
+        const tagifyContainer = document.querySelector('.tagify');
+        if (tagifyContainer) {
+            // Buscar el input original que Tagify está reemplazando
+            const originalInput = tagifyContainer.nextElementSibling || 
+                                 tagifyContainer.previousElementSibling ||
+                                 document.querySelector('input[placeholder*="Rank Math"]');
+            
+            if (originalInput && originalInput.tagName === 'INPUT') {
+                originalInput.value = keyword;
+                dispatchEvents(originalInput);
+                
+                // También actualizar el display de Tagify manualmente
+                const tagifyInput = tagifyContainer.querySelector('.tagify__input');
+                if (tagifyInput) {
+                    tagifyInput.textContent = keyword;
+                }
+                
+                console.log('[WooSEO] ✅ Focus keyword aplicado via input original');
+                return true;
+            }
+        }
+    } catch (error) {
+        console.warn('[WooSEO] Error con input original:', error);
+    }
+    
+    // Estrategia 4: Otros selectores alternativos
     const alternativeSelectors = [
         '#rank-math-focus-keyword',
         '.rank-math-focus-keyword',
