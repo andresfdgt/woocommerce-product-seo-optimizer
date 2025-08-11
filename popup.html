@@ -11,8 +11,30 @@
         <h1>Optimizador SEO</h1>
         <p class="subtitle">WooCommerce + Rank Math</p>
         
-        <button id="generateBtn" class="primary-button">Generar y Pegar SEO</button>
+        <div class="button-group">
+            <button id="generateBtn" class="primary-button">Generar y Pegar SEO</button>
+            <button id="historyBtn" class="secondary-button">📚 Historial</button>
+            <button id="clearBtn" class="secondary-button">🗑️ Limpiar</button>
+            <button id="debugBtn" class="secondary-button">🔍 Debug</button>
+        </div>
         <div id="status" class="status-message"></div>
+
+        <!-- Sección del Historial -->
+        <div id="history-container" class="history-container hidden">
+            <div class="history-header">
+                <h3>📚 Historial de Generaciones</h3>
+                <button id="closeHistoryBtn" class="close-btn">✕</button>
+            </div>
+            <div id="history-list" class="history-list">
+                <p class="no-history">No hay generaciones guardadas</p>
+            </div>
+        </div>
+
+        <!-- Indicador de contenido restaurado -->
+        <div id="restored-indicator" class="restored-indicator hidden">
+            <span>📄 Contenido restaurado de sesión anterior</span>
+            <button id="dismissIndicator" class="dismiss-btn">✕</button>
+        </div>
 
         <div id="seo-form-container" class="form-container hidden">
             <form id="seo-form">

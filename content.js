@@ -5,6 +5,43 @@
 console.log('[WooSEO] Script content.js cargado.');
 
 /**
+ * Función de debugging para identificar qué editores están disponibles
+ */
+function debugEditors() {
+    console.log('[WooSEO] === DEBUG: Analizando editores disponibles ===');
+    
+    // Check Gutenberg
+    const isGutenberg = window.wp && window.wp.data && window.wp.data.select('core/editor');
+    console.log('[WooSEO] Gutenberg disponible:', isGutenberg);
+    
+    // Check TinyMCE
+    const hasTinyMCE = window.tinymce;
+    console.log('[WooSEO] TinyMCE disponible:', hasTinyMCE);
+    if (hasTinyMCE) {
+        const editor = window.tinymce.get('content');
+        console.log('[WooSEO] TinyMCE editor "content":', editor);
+    }
+    
+    // Check elementos del DOM
+    const elements = {
+        'textarea.wp-editor-area': document.querySelector('textarea.wp-editor-area'),
+        '#content': document.querySelector('#content'),
+        '#content_ifr': document.querySelector('#content_ifr'),
+        '.wp-editor-area': document.querySelector('.wp-editor-area'),
+        '[name="content"]': document.querySelector('[name="content"]'),
+        '#postdivrich textarea': document.querySelector('#postdivrich textarea'),
+        '.editor-rich-text__editable': document.querySelector('.editor-rich-text__editable')
+    };
+    
+    console.log('[WooSEO] Elementos encontrados:');
+    Object.entries(elements).forEach(([selector, element]) => {
+        console.log(`  ${selector}:`, element ? 'ENCONTRADO' : 'NO ENCONTRADO');
+    });
+    
+    console.log('[WooSEO] === FIN DEBUG ===');
+}
+
+/**
  * Función para detectar si el editor es Gutenberg o el clásico.
  * @returns {boolean} True si es Gutenberg, false si es clásico.
  */
@@ -165,76 +202,225 @@ function applySeoData(data) {
  * @param {string} value El valor a aplicar.
  */
 function applySingleField(field, value) {
+    console.log(`[WooSEO] Aplicando campo: ${field} con valor:`, value);
     let targetElement = null;
+    let success = false;
 
     switch (field) {
         case 'title':
             targetElement = document.querySelector('#title') || document.querySelector('.editor-post-title__input');
-            if (targetElement) targetElement.value = value;
-            break;
-        case 'html_description':
-            if (isGutenbergEditor()) {
-                window.wp.data.dispatch('core/editor').editPost({ content: value });
+            if (targetElement) {
+                targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] Título aplicado correctamente');
             } else {
-                targetElement = document.querySelector('textarea.wp-editor-area');
-                if (targetElement) {
-                    targetElement.value = value;
-                    if (window.tinymce) {
-                        const editor = window.tinymce.get('content');
-                        if (editor) editor.setContent(value);
-                    }
-                }
+                console.error('[WooSEO] No se encontró el campo de título');
             }
             break;
+            
+        case 'html_description':
+            success = applyHtmlDescription(value);
+            break;
+            
         case 'focus_keyword':
             targetElement = document.querySelector('input[name="rank_math_focus_keyword"]');
-            if (targetElement) targetElement.value = value;
+            if (targetElement) {
+                targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] Focus keyword aplicado correctamente');
+            } else {
+                console.error('[WooSEO] No se encontró el campo focus keyword de Rank Math');
+            }
             break;
+            
         case 'seo_title':
             targetElement = document.querySelector('input[name="rank_math_title"]');
-            if (targetElement) targetElement.value = value;
+            if (targetElement) {
+                targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] SEO Title aplicado correctamente');
+            } else {
+                console.error('[WooSEO] No se encontró el campo SEO title de Rank Math');
+            }
             break;
+            
         case 'slug':
             targetElement = document.querySelector('#new-post-slug') || document.querySelector('.editor-post-slug__input');
             if (targetElement && !targetElement.readOnly && !targetElement.disabled) {
                 targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] Slug aplicado correctamente');
             } else {
-                console.warn('[WooSEO] El campo slug no es editable.');
+                console.warn('[WooSEO] El campo slug no es editable o no se encontró');
             }
             break;
+            
         case 'seo_description':
             targetElement = document.querySelector('textarea[name="rank_math_description"]');
-            if (targetElement) targetElement.value = value;
+            if (targetElement) {
+                targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] SEO Description aplicado correctamente');
+            } else {
+                console.error('[WooSEO] No se encontró el campo SEO description de Rank Math');
+            }
             break;
+            
         case 'image_alt':
-            targetElement = document.querySelector('input[aria-label="Alt text"]') || document.querySelector('input[aria-label="Texto alternativo"]');
-            if (targetElement) targetElement.value = value;
+            targetElement = document.querySelector('input[aria-label="Alt text"]') || 
+                           document.querySelector('input[aria-label="Texto alternativo"]') ||
+                           document.querySelector('input[name="image_alt"]');
+            if (targetElement) {
+                targetElement.value = value;
+                dispatchEvents(targetElement);
+                success = true;
+                console.log('[WooSEO] Image Alt aplicado correctamente');
+            } else {
+                console.error('[WooSEO] No se encontró el campo image alt');
+            }
             break;
     }
 
-    if (targetElement) {
-        dispatchEvents(targetElement);
+    return success;
+}
+
+/**
+ * Función específica para aplicar la descripción HTML con múltiples estrategias
+ * @param {string} value El contenido HTML a aplicar
+ * @returns {boolean} True si se aplicó correctamente
+ */
+function applyHtmlDescription(value) {
+    console.log('[WooSEO] Intentando aplicar descripción HTML...');
+    
+    // Estrategia 1: Gutenberg Editor
+    if (isGutenbergEditor()) {
+        try {
+            console.log('[WooSEO] Usando Gutenberg editor');
+            window.wp.data.dispatch('core/editor').editPost({ content: value });
+            console.log('[WooSEO] Descripción HTML aplicada en Gutenberg');
+            return true;
+        } catch (e) {
+            console.error('[WooSEO] Error al aplicar en Gutenberg:', e);
+        }
+    }
+    
+    // Estrategia 2: Editor Clásico con TinyMCE
+    const classicDescription = document.querySelector('textarea.wp-editor-area');
+    if (classicDescription) {
+        console.log('[WooSEO] Usando editor clásico');
+        classicDescription.value = value;
+        
+        // Actualizar TinyMCE si está disponible
+        if (window.tinymce) {
+            const editor = window.tinymce.get('content');
+            if (editor) {
+                console.log('[WooSEO] Actualizando TinyMCE');
+                editor.setContent(value);
+            }
+        }
+        
+        dispatchEvents(classicDescription);
+        console.log('[WooSEO] Descripción HTML aplicada en editor clásico');
         return true;
     }
+    
+    // Estrategia 3: Otros selectores comunes para el contenido
+    const alternativeSelectors = [
+        '#content',
+        '#content_ifr', // iframe de TinyMCE
+        '.wp-editor-area',
+        '[name="content"]',
+        '#postdivrich textarea',
+        '.editor-rich-text__editable'
+    ];
+    
+    for (const selector of alternativeSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+            console.log(`[WooSEO] Encontrado elemento con selector: ${selector}`);
+            element.value = value;
+            dispatchEvents(element);
+            console.log('[WooSEO] Descripción HTML aplicada con selector alternativo');
+            return true;
+        }
+    }
+    
+    // Estrategia 4: Intentar con iframe de TinyMCE directamente
+    const iframe = document.querySelector('#content_ifr');
+    if (iframe) {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const body = iframeDoc.querySelector('body');
+            if (body) {
+                console.log('[WooSEO] Aplicando contenido directamente en iframe TinyMCE');
+                body.innerHTML = value;
+                
+                // Disparar eventos en el iframe
+                body.dispatchEvent(new Event('input', { bubbles: true }));
+                body.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                console.log('[WooSEO] Descripción HTML aplicada en iframe TinyMCE');
+                return true;
+            }
+        } catch (e) {
+            console.error('[WooSEO] Error al acceder al iframe de TinyMCE:', e);
+        }
+    }
+    
+    console.error('[WooSEO] No se pudo aplicar la descripción HTML - no se encontró ningún editor');
     return false;
 }
 
 // Escucha mensajes del popup (e.g., para aplicar el JSON).
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('[WooSEO] Mensaje recibido:', request);
+    
     if (!request || !request.action) {
         console.error('[WooSEO] Mensaje de solicitud inválido.');
+        sendResponse({ success: false, error: 'Mensaje inválido' });
         return;
     }
 
     if (request.action === 'GET_PRODUCT_DATA') {
         const data = getProductData();
+        console.log('[WooSEO] Datos del producto extraídos:', data);
         sendResponse({ productData: data });
+        
     } else if (request.action === 'APPLY_JSON') {
         applySeoData(request.data);
         sendResponse({ success: true });
+        
     } else if (request.action === 'APPLY_SINGLE_FIELD') {
+        console.log(`[WooSEO] Aplicando campo individual: ${request.field}`);
+        
+        // Ejecutar debugging antes de aplicar el campo
+        if (request.field === 'html_description') {
+            debugEditors();
+        }
+        
         const success = applySingleField(request.field, request.value);
-        sendResponse({ success: success });
+        
+        if (success) {
+            console.log(`[WooSEO] Campo ${request.field} aplicado exitosamente`);
+            sendResponse({ success: true });
+        } else {
+            console.error(`[WooSEO] Error al aplicar campo ${request.field}`);
+            sendResponse({ 
+                success: false, 
+                error: `No se pudo aplicar el campo ${request.field}` 
+            });
+        }
+        
+    } else if (request.action === 'DEBUG_EDITORS') {
+        // Nueva acción para debugging manual
+        debugEditors();
+        sendResponse({ success: true });
     }
+    
     return true; // Indica que la respuesta será asíncrona.
 });
