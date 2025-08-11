@@ -321,7 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Recargar historial
                             await loadHistory();
 
-                            showStatus('✅ Datos SEO generados y guardados. Puedes editarlos y aplicarlos.', 'success');
+                            // Mostrar qué IA se usó
+                            const provider = currentSeoData._metadata?.provider || 'IA';
+                            const model = currentSeoData._metadata?.model || '';
+                            const aiInfo = model ? `${provider.toUpperCase()} (${model})` : provider.toUpperCase();
+                            
+                            showStatus(`✅ Contenido generado con ${aiInfo}. Puedes editarlo y aplicarlo.`, 'success');
                         } catch (e) {
                             showStatus('Error al procesar la respuesta de la API.', 'error');
                             jsonOutput.textContent = JSON.stringify(apiResponse.data, null, 2);
@@ -376,8 +381,28 @@ document.addEventListener('DOMContentLoaded', () => {
     seoForm.addEventListener('click', async (event) => {
         if (event.target.classList.contains('apply-btn')) {
             const field = event.target.dataset.field;
-            const inputId = `input${field.charAt(0).toUpperCase() + field.slice(1)}`;
-            const value = document.getElementById(inputId).value;
+            
+            // Mapeo correcto de campos a IDs de input en el popup
+            const fieldToInputMap = {
+                'title': 'inputTitle',
+                'html_description': 'inputHtmlDescription',
+                'focus_keyword': 'inputFocusKeyword',
+                'seo_title': 'inputSeoTitle',
+                'slug': 'inputSlug',
+                'seo_description': 'inputSeoDescription',
+                'image_alt': 'inputImageAlt'
+            };
+            
+            const inputId = fieldToInputMap[field];
+            const inputElement = document.getElementById(inputId);
+            
+            if (!inputElement) {
+                showStatus(`❌ Error: No se encontró el campo '${field}' en el formulario`, 'error');
+                console.error(`[WooSEO] Campo no encontrado: ${field}, inputId esperado: ${inputId}`);
+                return;
+            }
+            
+            const value = inputElement.value;
             
             // Mostrar que se está procesando
             const originalText = event.target.textContent;

@@ -203,87 +203,82 @@ function applySeoData(data) {
  */
 function applySingleField(field, value) {
     console.log(`[WooSEO] Aplicando campo: ${field} con valor:`, value);
-    let targetElement = null;
-    let success = false;
+    
+    // Mapeo de campos del popup a campos de WordPress
+    const fieldMappings = {
+        'title': ['#title', 'input[name="post_title"]', '#post-title-0'],
+        'html_description': ['#content', 'textarea[name="content"]', '#content_ifr'],
+        'focus_keyword': [
+            '.tagify__input',
+            'input[name="rank_math_focus_keyword"]',
+            '#rank-math-focus-keyword',
+            '.rank-math-focus-keyword'
+        ],
+        'seo_title': [
+            '#rank-math-editor-title',
+            'input[name="rank_math_title"]',
+            '#rank-math-title',
+            '.rank-math-title'
+        ],
+        'slug': ['#post_name', '#editable-post-name', 'input[name="post_name"]'],
+        'seo_description': [
+            '#rank-math-editor-description',
+            'textarea[name="rank_math_description"]',
+            '#rank-math-description',
+            '.rank-math-description'
+        ],
+        'image_alt': ['input[name="_wp_attachment_image_alt"]', '#attachment_alt']
+    };
 
-    switch (field) {
-        case 'title':
-            targetElement = document.querySelector('#title') || document.querySelector('.editor-post-title__input');
-            if (targetElement) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
+    const selectors = fieldMappings[field];
+    if (!selectors) {
+        console.error(`[WooSEO] Campo '${field}' no reconocido`);
+        return false;
+    }
+
+    let success = false;
+    let lastError = '';
+
+    // Manejo especial para descripción HTML
+    if (field === 'html_description') {
+        success = applyHtmlDescription(value);
+        return success;
+    }
+
+    // Manejo especial para focus keyword (Tagify)
+    if (field === 'focus_keyword') {
+        success = applyFocusKeyword(value);
+        return success;
+    }
+
+    // Para otros campos, intentar selectores en orden
+    for (const selector of selectors) {
+        try {
+            const element = document.querySelector(selector);
+            if (element) {
+                console.log(`[WooSEO] Elemento encontrado con selector: ${selector}`);
+                
+                // Aplicar valor según el tipo de elemento
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    element.value = value;
+                    element.focus();
+                    dispatchEvents(element);
+                } else {
+                    element.textContent = value;
+                }
+                
                 success = true;
-                console.log('[WooSEO] Título aplicado correctamente');
-            } else {
-                console.error('[WooSEO] No se encontró el campo de título');
+                console.log(`[WooSEO] Campo '${field}' aplicado exitosamente`);
+                break;
             }
-            break;
-            
-        case 'html_description':
-            success = applyHtmlDescription(value);
-            break;
-            
-        case 'focus_keyword':
-            targetElement = document.querySelector('input[name="rank_math_focus_keyword"]');
-            if (targetElement) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
-                success = true;
-                console.log('[WooSEO] Focus keyword aplicado correctamente');
-            } else {
-                console.error('[WooSEO] No se encontró el campo focus keyword de Rank Math');
-            }
-            break;
-            
-        case 'seo_title':
-            targetElement = document.querySelector('input[name="rank_math_title"]');
-            if (targetElement) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
-                success = true;
-                console.log('[WooSEO] SEO Title aplicado correctamente');
-            } else {
-                console.error('[WooSEO] No se encontró el campo SEO title de Rank Math');
-            }
-            break;
-            
-        case 'slug':
-            targetElement = document.querySelector('#new-post-slug') || document.querySelector('.editor-post-slug__input');
-            if (targetElement && !targetElement.readOnly && !targetElement.disabled) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
-                success = true;
-                console.log('[WooSEO] Slug aplicado correctamente');
-            } else {
-                console.warn('[WooSEO] El campo slug no es editable o no se encontró');
-            }
-            break;
-            
-        case 'seo_description':
-            targetElement = document.querySelector('textarea[name="rank_math_description"]');
-            if (targetElement) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
-                success = true;
-                console.log('[WooSEO] SEO Description aplicado correctamente');
-            } else {
-                console.error('[WooSEO] No se encontró el campo SEO description de Rank Math');
-            }
-            break;
-            
-        case 'image_alt':
-            targetElement = document.querySelector('input[aria-label="Alt text"]') || 
-                           document.querySelector('input[aria-label="Texto alternativo"]') ||
-                           document.querySelector('input[name="image_alt"]');
-            if (targetElement) {
-                targetElement.value = value;
-                dispatchEvents(targetElement);
-                success = true;
-                console.log('[WooSEO] Image Alt aplicado correctamente');
-            } else {
-                console.error('[WooSEO] No se encontró el campo image alt');
-            }
-            break;
+        } catch (error) {
+            lastError = error.message;
+            console.warn(`[WooSEO] Error con selector ${selector}:`, error);
+        }
+    }
+
+    if (!success) {
+        console.error(`[WooSEO] No se encontró el campo '${field}'. Último error: ${lastError}`);
     }
 
     return success;
@@ -291,88 +286,152 @@ function applySingleField(field, value) {
 
 /**
  * Función específica para aplicar la descripción HTML con múltiples estrategias
- * @param {string} value El contenido HTML a aplicar
+ * @param {string} htmlContent El contenido HTML a aplicar
  * @returns {boolean} True si se aplicó correctamente
  */
-function applyHtmlDescription(value) {
-    console.log('[WooSEO] Intentando aplicar descripción HTML...');
+function applyHtmlDescription(htmlContent) {
+    console.log('[WooSEO] Intentando aplicar descripción HTML:', htmlContent);
     
-    // Estrategia 1: Gutenberg Editor
-    if (isGutenbergEditor()) {
+    // Estrategia 1: Editor TinyMCE (Visual)
+    if (typeof tinyMCE !== 'undefined' && tinyMCE.get('content')) {
         try {
-            console.log('[WooSEO] Usando Gutenberg editor');
-            window.wp.data.dispatch('core/editor').editPost({ content: value });
-            console.log('[WooSEO] Descripción HTML aplicada en Gutenberg');
-            return true;
-        } catch (e) {
-            console.error('[WooSEO] Error al aplicar en Gutenberg:', e);
+            const editor = tinyMCE.get('content');
+            if (editor && !editor.isHidden()) {
+                editor.setContent(htmlContent);
+                editor.focus();
+                console.log('[WooSEO] ✅ Contenido aplicado via TinyMCE');
+                return true;
+            }
+        } catch (error) {
+            console.warn('[WooSEO] Error con TinyMCE:', error);
         }
     }
-    
-    // Estrategia 2: Editor Clásico con TinyMCE
-    const classicDescription = document.querySelector('textarea.wp-editor-area');
-    if (classicDescription) {
-        console.log('[WooSEO] Usando editor clásico');
-        classicDescription.value = value;
-        
-        // Actualizar TinyMCE si está disponible
-        if (window.tinymce) {
-            const editor = window.tinymce.get('content');
-            if (editor) {
-                console.log('[WooSEO] Actualizando TinyMCE');
-                editor.setContent(value);
+
+    // Estrategia 2: Iframe de TinyMCE
+    try {
+        const iframe = document.getElementById('content_ifr');
+        if (iframe && iframe.contentDocument) {
+            const body = iframe.contentDocument.body;
+            if (body) {
+                body.innerHTML = htmlContent;
+                console.log('[WooSEO] ✅ Contenido aplicado via iframe TinyMCE');
+                return true;
             }
         }
-        
-        dispatchEvents(classicDescription);
-        console.log('[WooSEO] Descripción HTML aplicada en editor clásico');
-        return true;
+    } catch (error) {
+        console.warn('[WooSEO] Error con iframe TinyMCE:', error);
+    }
+
+    // Estrategia 3: Textarea (modo Código)
+    try {
+        const textarea = document.getElementById('content');
+        if (textarea) {
+            textarea.value = htmlContent;
+            textarea.focus();
+            dispatchEvents(textarea);
+            console.log('[WooSEO] ✅ Contenido aplicado via textarea');
+            return true;
+        }
+    } catch (error) {
+        console.warn('[WooSEO] Error con textarea:', error);
+    }
+
+    // Estrategia 4: Gutenberg (si está presente)
+    try {
+        if (typeof wp !== 'undefined' && wp.data && wp.data.select('core/editor')) {
+            wp.data.dispatch('core/editor').editPost({ content: htmlContent });
+            console.log('[WooSEO] ✅ Contenido aplicado via Gutenberg');
+            return true;
+        }
+    } catch (error) {
+        console.warn('[WooSEO] Error con Gutenberg:', error);
+    }
+
+    console.error('[WooSEO] ❌ No se pudo aplicar la descripción HTML con ninguna estrategia');
+    return false;
+}
+
+/**
+ * Función específica para aplicar el focus keyword con Tagify
+ * @param {string} keyword La palabra clave a aplicar
+ * @returns {boolean} True si se aplicó correctamente
+ */
+function applyFocusKeyword(keyword) {
+    console.log('[WooSEO] Intentando aplicar focus keyword:', keyword);
+    
+    // Estrategia 1: Tagify input (Rank Math nuevo)
+    try {
+        const tagifyInput = document.querySelector('.tagify__input');
+        if (tagifyInput) {
+            // Limpiar contenido actual
+            tagifyInput.textContent = '';
+            tagifyInput.innerHTML = '';
+            
+            // Insertar el nuevo keyword
+            tagifyInput.textContent = keyword;
+            tagifyInput.innerHTML = keyword;
+            
+            // Simular eventos de teclado para activar Tagify
+            tagifyInput.focus();
+            
+            // Simular typing
+            const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+            tagifyInput.dispatchEvent(inputEvent);
+            
+            // Simular Enter para confirmar el tag
+            const keydownEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            });
+            tagifyInput.dispatchEvent(keydownEvent);
+            
+            console.log('[WooSEO] ✅ Focus keyword aplicado via Tagify');
+            return true;
+        }
+    } catch (error) {
+        console.warn('[WooSEO] Error con Tagify:', error);
     }
     
-    // Estrategia 3: Otros selectores comunes para el contenido
+    // Estrategia 2: Input hidden de Rank Math (versión anterior)
+    try {
+        const hiddenInput = document.querySelector('input[name="rank_math_focus_keyword"]');
+        if (hiddenInput) {
+            hiddenInput.value = keyword;
+            dispatchEvents(hiddenInput);
+            console.log('[WooSEO] ✅ Focus keyword aplicado via input hidden');
+            return true;
+        }
+    } catch (error) {
+        console.warn('[WooSEO] Error con input hidden:', error);
+    }
+    
+    // Estrategia 3: Otros selectores alternativos
     const alternativeSelectors = [
-        '#content',
-        '#content_ifr', // iframe de TinyMCE
-        '.wp-editor-area',
-        '[name="content"]',
-        '#postdivrich textarea',
-        '.editor-rich-text__editable'
+        '#rank-math-focus-keyword',
+        '.rank-math-focus-keyword',
+        'input[placeholder*="Rank Math"]'
     ];
     
     for (const selector of alternativeSelectors) {
-        const element = document.querySelector(selector);
-        if (element) {
-            console.log(`[WooSEO] Encontrado elemento con selector: ${selector}`);
-            element.value = value;
-            dispatchEvents(element);
-            console.log('[WooSEO] Descripción HTML aplicada con selector alternativo');
-            return true;
-        }
-    }
-    
-    // Estrategia 4: Intentar con iframe de TinyMCE directamente
-    const iframe = document.querySelector('#content_ifr');
-    if (iframe) {
         try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            const body = iframeDoc.querySelector('body');
-            if (body) {
-                console.log('[WooSEO] Aplicando contenido directamente en iframe TinyMCE');
-                body.innerHTML = value;
-                
-                // Disparar eventos en el iframe
-                body.dispatchEvent(new Event('input', { bubbles: true }));
-                body.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                console.log('[WooSEO] Descripción HTML aplicada en iframe TinyMCE');
+            const element = document.querySelector(selector);
+            if (element) {
+                element.value = keyword;
+                element.focus();
+                dispatchEvents(element);
+                console.log(`[WooSEO] ✅ Focus keyword aplicado via ${selector}`);
                 return true;
             }
-        } catch (e) {
-            console.error('[WooSEO] Error al acceder al iframe de TinyMCE:', e);
+        } catch (error) {
+            console.warn(`[WooSEO] Error con selector ${selector}:`, error);
         }
     }
     
-    console.error('[WooSEO] No se pudo aplicar la descripción HTML - no se encontró ningún editor');
+    console.error('[WooSEO] ❌ No se pudo aplicar el focus keyword con ninguna estrategia');
     return false;
 }
 

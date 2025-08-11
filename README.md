@@ -24,29 +24,72 @@ Selecciona la carpeta: Elige la carpeta que contiene los archivos de la extensi�
 ¡Listo! La extensión aparecerá en tu lista y el icono se mostrará en la barra de herramientas del navegador.
 
 2. Configuración de la API Key y el Prompt
-Antes de usar la extensión, debes configurar tu API Key y el prompt base.
 
-Obtener tu API Key de Gemini:
+### Selección de Proveedor de IA
+La extensión ahora soporta múltiples proveedores de IA:
+- **Google Gemini** (recomendado para español)
+- **OpenAI ChatGPT** (excelente calidad general)
 
-Ve a la consola de desarrolladores de Google AI Studio.
+### Configuración Paso a Paso
 
-Crea un nuevo proyecto y obtén tu clave de API.
+**Paso 1: Obtener API Keys**
 
-Acceder a la página de opciones:
+Para Gemini:
+- Ve a [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Crea un nuevo proyecto y obtén tu clave de API
 
-Haz clic derecho en el icono de la extensión en la barra de herramientas.
+Para OpenAI:
+- Ve a [OpenAI Platform](https://platform.openai.com/api-keys)
+- Crea una nueva API Key
 
-Selecciona "Opciones".
+**Paso 2: Acceder a la página de opciones**
+- Haz clic derecho en el icono de la extensión en la barra de herramientas
+- Selecciona "Opciones"
+- Se abrirá la página de configuración
 
-Se abrirá la página de configuración.
+**Paso 3: Configurar proveedor y modelo**
+1. **Proveedor de IA**: Selecciona entre Gemini o OpenAI
+2. **API Key**: Introduce tu clave de API correspondiente
+3. **Modelo**: Elige el modelo específico:
+   - **Gemini**: 2.5 Flash (recomendado), 1.5 Pro, 1.5 Flash, Pro
+   - **OpenAI**: GPT-4o (recomendado), GPT-4o Mini, GPT-4, GPT-3.5 Turbo
+4. **Prompt base**: Se auto-ajusta según el proveedor, pero puedes personalizarlo
 
-Configurar los campos:
+**Paso 4: Probar conexión**
+- Usa el botón "🔍 Probar Conexión" para verificar que todo funciona
+- La extensión te confirmará si la conexión es exitosa
 
-Pega tu clave de API de Gemini en el campo "API Key de Gemini".
+**Paso 5: Guardar**
+- Haz clic en "Guardar Configuración"
+- Verás un mensaje de confirmación
 
-El campo "Prompt base para Gemini" ya tiene un prompt predeterminado que sigue todas las reglas. Puedes ajustarlo si lo deseas, pero asegúrate de mantener los placeholders {title}, {description}, {ingredients}, {size} y {imageUrl} para que la extensión funcione correctamente.
+### Recomendaciones de Uso
 
-Guardar: Haz clic en "Guardar Configuración". Verás un mensaje de confirmación.
+**¿Qué IA elegir?**
+
+**Google Gemini:**
+- ✅ Excelente para contenido en español
+- ✅ Respuesta JSON estructurada nativa
+- ✅ Gratuito hasta cierto límite
+- ✅ Rápido y eficiente
+- 🎯 **Recomendado para**: Uso general, múltiples productos
+
+**OpenAI (ChatGPT):**
+- ✅ Calidad de escritura superior
+- ✅ Mejor comprensión de contexto
+- ✅ Creatividad en descripciones
+- 💰 Requiere créditos de API
+- 🎯 **Recomendado para**: Productos premium, descripciones complejas
+
+**¿Qué modelo elegir?**
+
+**Para Gemini:**
+- **2.5 Flash**: Ideal para uso diario (rápido y económico)
+- **1.5 Pro**: Para productos que requieren más creatividad
+
+**Para OpenAI:**
+- **GPT-4o**: Mejor calidad general (recomendado si el presupuesto lo permite)
+- **GPT-4o Mini**: Buen balance calidad/precio
 
 3. Uso de la Extensión
 Navega a la página de edición de un producto en tu sitio de WooCommerce (ya sea con el editor clásico o con Gutenberg).
@@ -127,23 +170,44 @@ Selecciona la carpeta que contiene todos los archivos de la extensión.
 
 El navegador creará un archivo .crx (la extensión empaquetada) y un archivo .pem (la clave privada). Guarda el archivo .pem en un lugar seguro.
 
-## Changelog v2.0
+## Changelog v3.0
 
-### ✨ Nuevas Funcionalidades
+### 🚀 Nuevas Funcionalidades Principales
+- **Soporte Multi-IA**: Elige entre Google Gemini y OpenAI (ChatGPT)
+- **Selección de modelos**: Acceso a diferentes modelos de cada proveedor
+- **Configuración inteligente**: Prompts optimizados automáticamente para cada IA
+- **Prueba de conexión**: Verifica tu configuración antes de usar
+- **Metadatos de generación**: Información sobre qué IA y modelo se usó
+
+### 🤖 Proveedores de IA Soportados
+
+**Google Gemini:**
+- Gemini 2.5 Flash (recomendado para rapidez)
+- Gemini 1.5 Pro (mejor calidad)
+- Gemini 1.5 Flash
+- Gemini Pro
+
+**OpenAI:**
+- GPT-4o (recomendado para calidad)
+- GPT-4o Mini (económico)
+- GPT-4
+- GPT-3.5 Turbo
+
+### ✨ Mejoras Anteriores (v2.0)
 - **Persistencia automática**: El contenido ya no se pierde al cerrar el popup
 - **Sistema de historial**: Hasta 20 generaciones guardadas localmente
 - **Auto-guardado**: Los cambios se guardan automáticamente cada segundo
 - **Restauración inteligente**: Detecta y restaura contenido de la sesión anterior
-- **Navegación por historial**: Interfaz intuitiva para revisar y cargar generaciones anteriores
+- **Debugging mejorado**: Herramientas para diagnosticar problemas
 
 ### 🎨 Mejoras en la Interfaz
-- **Botones reorganizados**: Nuevo diseño con botones de Historial y Limpiar
-- **Indicadores visuales**: Notificación cuando se restaura contenido
-- **Panel de historial**: Vista previa de cada generación con fecha y URL
-- **Mejor feedback**: Mensajes de estado más claros y auto-ocultables
+- **Panel de configuración renovado**: Interfaz más intuitiva para elegir IA
+- **Indicadores de estado**: Muestra qué IA se está usando
+- **Feedback de conexión**: Prueba tu configuración al instante
+- **Botones de acción**: Limpiar, restaurar, probar conexión
 
 ### 🔧 Mejoras Técnicas
-- **Almacenamiento local**: Uso de Chrome Storage API para persistencia
-- **Gestión de datos**: Limpieza automática de entradas antiguas (máximo 20)
-- **Detección de páginas**: Restauración inteligente basada en la URL actual
-- **Manejo de errores**: Mejor gestión de casos edge y validaciones
+- **API unificada**: Misma interfaz para diferentes proveedores
+- **Manejo de errores robusto**: Mejor gestión de fallos de API
+- **Reintentos automáticos**: Sistema de reintentos con backoff exponencial
+- **Metadata de generación**: Rastrea qué IA generó cada contenido
